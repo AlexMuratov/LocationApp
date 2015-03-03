@@ -11,7 +11,7 @@
 #import "Location.h"
 #import <GoogleMaps/GoogleMaps.h>
 
-#define MAP_ZOOM_LEVEL 11
+#define MAP_ZOOM_LEVEL 0
 #define MARKER_FRAME CGRectMake(0, 0, 64, 32)
 #define MARKER_LABEL_FRAME CGRectMake(0, 0, 64, 23)
 
@@ -68,6 +68,8 @@
 }
 
 - (void)setMapPoints {
+	GMSCoordinateBounds *bounds = [[GMSCoordinateBounds alloc] init];
+
 	for (Location *location in locationsArray) {
 		GMSMarker *marker = [[GMSMarker alloc] init];
 		
@@ -86,8 +88,12 @@
 		marker.title = location.name;
 		marker.infoWindowAnchor = CGPointMake(0.5, 0.0);
 		marker.position = CLLocationCoordinate2DMake(location.coordinate.lattitude, location.coordinate.longitude);
+		bounds = [bounds includingCoordinate:marker.position];
 		marker.map = mapView_;
 	}
+	
+	// Реализация масштабирования карты так, чтобы было видно все маркеры
+	[mapView_ animateWithCameraUpdate:[GMSCameraUpdate fitBounds:bounds withPadding:50.0f]];
 }
 
 - (void)setMapPolyline {
@@ -108,37 +114,6 @@
 	polyline.map = mapView_;
 }
 
-/*
- Поиск центальной координаты для калибровки отображения камеры карты
- Основной смысл в том, чтобы найти среднее значение среди минимальной и максимальной широты и минимальной и максимальной долготы и из этих средних значение сделать искомую координату
- */
-- (Coordinate *)getCentralCoordinate {
-	Coordinate *coordinate = [[Coordinate alloc] init];
-	NSMutableArray *array = [[NSMutableArray alloc] init];
-	for (Location *location in locationsArray) {
-		[array addObject:location.coordinate];
-	}
-	double minLattitude = 0;
-	double maxLattitude = 0;
-	double minLongitude = 0;
-	double maxLongitude = 0;
-	
-	[array setArray:[self sortArray:array ByKey:@"lattitude"]];
-
-	minLattitude = ((Coordinate *)[array objectAtIndex:0]).lattitude;
-	maxLattitude = ((Coordinate *)[array objectAtIndex:array.count - 1]).lattitude;
-	
-	[array setArray:[self sortArray:array ByKey:@"longitude"]];
-
-	minLongitude = ((Coordinate *)[array objectAtIndex:0]).longitude;
-	maxLongitude = ((Coordinate *)[array objectAtIndex:array.count - 1]).longitude;
-
-	coordinate.lattitude = (minLattitude + maxLattitude) / 2;
-	coordinate.longitude = (minLongitude + maxLongitude) / 2;
-	
-	return coordinate;
-}
-
 #pragma mark - GetLocationsService Delegate
 - (void)getLocationsWithArray:(NSArray *)array {
 	[loadingView setAlpha:0];
@@ -146,15 +121,15 @@
 	if (array) {
 		locationsArray = array;
 		
-		// Рассчитываем координату, центральную относительно всех координат
-		Coordinate *centralCoordinate = [[Coordinate alloc] init];
-		centralCoordinate = [self getCentralCoordinate];
+		// За стартовую точку принимаем первую точку
+		Coordinate *coordinate = ((Location *)[locationsArray objectAtIndex:0]).coordinate;
 		
 		// Инициализируем карту
-		GMSCameraPosition *camera = [GMSCameraPosition cameraWithLatitude:centralCoordinate.lattitude
-																longitude:centralCoordinate.longitude
+		GMSCameraPosition *camera = [GMSCameraPosition cameraWithLatitude:coordinate.lattitude
+																longitude:coordinate.longitude
 																	 zoom:MAP_ZOOM_LEVEL];
 		mapView_ = [GMSMapView mapWithFrame:CGRectZero camera:camera];
+		
 		mapView_.myLocationEnabled = YES;
 		self.view = mapView_;
 		

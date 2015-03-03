@@ -7,9 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <GoogleMaps/GoogleMaps.h>
 #import "GetLocationsService.h"
 
-@interface LocationsViewController : UIViewController <GetLocationsServiceDelegate>
+@interface LocationsViewController : UIViewController <GMSMapViewDelegate, GetLocationsServiceDelegate>
 {
 	NSArray *locationsArray;
 	
