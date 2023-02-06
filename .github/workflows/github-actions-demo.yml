@@ -21,5 +21,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy 🍎
-      - run: echo "😍 ${{ github.actor }}"
+        run: echo "😍 ${{ github.actor }}"
 
