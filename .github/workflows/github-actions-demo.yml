@@ -16,3 +16,10 @@ jobs:
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
+      
+  Deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy 🍎
+      - run: echo "😍 {{ github.actor }}"
+
